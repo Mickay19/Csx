@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои сохраненные данные - CSX</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #555;
+        }
+        
+        .tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .tab.active {
+            background: #4cc9f0;
+            color: #1a1a1a;
+            border-color: #555;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .builds-grid, .comparisons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .build-card, .comparison-card {
+            background: linear-gradient(145deg, #4a4a4a, #3a3a3a);
+            border: 1px solid #4cc9f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            position: relative;
+        }
+        
+        .card-actions {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            color: #e0e0e0;
+            cursor: pointer;
+            padding: 0.3rem;
+            border-radius: 3px;
+            transition: background 0.3s;
+        }
+        
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #888;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .stat-card {
+            background: rgba(76, 201, 240, 0.1);
+            border: 1px solid #4cc9f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            color: #4cc9f0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💾 Мои сохраненные данные</h1>
+            <p>Управление вашими сборками и расчетами</p>
+        </header>
+
+        <div class="artifacts-container">
+            <a href="index.html" class="back-button">← На главную</a>
+
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('builds')">Мои сборки</div>
+                <div class="tab" onclick="switchTab('comparisons')">Мои расчеты</div>
+                <div class="tab" onclick="switchTab('stats')">Статистика</div>
+            </div>
+
+            <!-- Вкладка сборок -->
+            <div class="tab-content active" id="buildsTab">
+                <h2>Сохраненные сборки артефактов</h2>
+                <div class="builds-grid" id="buildsGrid">
+                    <!-- Сборки будут загружены через JavaScript -->
+                </div>
+                <div class="empty-state" id="buildsEmpty" style="display: none;">
+                    <h3>У вас пока нет сохраненных сборок</h3>
+                    <p>Создайте свою первую сборку в разделе артефактов</p>
+                    <a href="artifacts.html" class="calculate-button" style="display: inline-block; width: auto; margin-top: 1rem;">
+                        Перейти к артефактам
+                    </a>
+                </div>
+            </div>
+
+            <!-- Вкладка расчетов -->
+            <div class="tab-content" id="comparisonsTab">
+                <h2>Сохраненные расчеты урона</h2>
+                <div class="comparisons-grid" id="comparisonsGrid">
+                    <!-- Расчеты будут загружены через JavaScript -->
+                </div>
+                <div class="empty-state" id="comparisonsEmpty" style="display: none;">
+                    <h3>У вас пока нет сохраненных расчетов</h3>
+                    <p>Создайте свой первый расчет в калькуляторе урона</p>
+                    <a href="damage-calculator.html" class="calculate-button" style="display: inline-block; width: auto; margin-top: 1rem;">
+                        Перейти к калькулятору
+                    </a>
+                </div>
+            </div>
+
+            <!-- Вкладка статистики -->
+            <div class="tab-content" id="statsTab">
+                <h2>Статистика использования</h2>
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Статистика будет загружена через JavaScript -->
+                </div>
+                <div class="empty-state" id="statsEmpty">
+                    <h3>Статистика загружается...</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        let currentTab = 'builds';
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🔐 Проверка авторизации...');
+            
+            // Проверка авторизации
+            if (!authSystem.checkAuth()) {
+                alert('Для просмотра сохраненных данных необходимо войти в систему');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            console.log('✅ Пользователь авторизован:', authSystem.getUserInfo());
+            await loadSavedBuilds();
+        });
+
+        function switchTab(tabName) {
+            // Скрываем все вкладки
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Показываем выбранную вкладку
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            
+            currentTab = tabName;
+            
+            // Загружаем данные для вкладки
+            if (tabName === 'builds') {
+                loadSavedBuilds();
+            } else if (tabName === 'comparisons') {
+                loadSavedComparisons();
+            } else if (tabName === 'stats') {
+                loadUserStats();
+            }
+        }
+
+        async function loadSavedBuilds() {
+            try {
+                console.log('📦 Загрузка сборок...');
+                
+                const response = await fetch('http://localhost:3000/api/builds/user', {
+                    headers: authSystem.getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const builds = await response.json();
+                const buildsGrid = document.getElementById('buildsGrid');
+                const emptyState = document.getElementById('buildsEmpty');
+
+                console.log('📦 Получено сборок:', builds);
+
+                if (!builds || builds.length === 0) {
+                    buildsGrid.style.display = 'none';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                buildsGrid.innerHTML = builds.map(build => `
+                    <div class="build-card">
+                        <div class="card-actions">
+                            <button class="action-btn" onclick="loadBuild(${build.id})" title="Загрузить">📂</button>
+                            <button class="action-btn" onclick="deleteBuild(${build.id})" title="Удалить">🗑️</button>
+                        </div>
+                        <h3>${build.build_name}</h3>
+                        <p>Костюм: ${build.weapon_data?.suit || 'Не указан'}</p>
+                        <p>Контейнер: ${build.weapon_data?.container || 'Не указан'}</p>
+                        <p>Артефактов: ${build.weapon_data?.artifacts?.length || 0}</p>
+                        <small>Создано: ${new Date(build.created_at).toLocaleDateString()}</small>
+                    </div>
+                `).join('');
+                
+                buildsGrid.style.display = 'grid';
+                emptyState.style.display = 'none';
+            } catch (error) {
+                console.error('❌ Error loading builds:', error);
+                document.getElementById('buildsEmpty').innerHTML = `
+                    <h3>Ошибка загрузки</h3>
+                    <p>${error.message}</p>
+                    <a href="index.html" class="calculate-button" style="display: inline-block; width: auto; margin-top: 1rem;">
+                        На главную
+                    </a>
+                `;
+                document.getElementById('buildsEmpty').style.display = 'block';
+            }
+        }
+
+        async function loadSavedComparisons() {
+            try {
+                console.log('📊 Загрузка сравнений...');
+                
+                const response = await fetch('http://localhost:3000/api/comparisons/user', {
+                    headers: authSystem.getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const comparisons = await response.json();
+                const comparisonsGrid = document.getElementById('comparisonsGrid');
+                const emptyState = document.getElementById('comparisonsEmpty');
+
+                console.log('📊 Получено сравнений:', comparisons);
+
+                if (!comparisons || comparisons.length === 0) {
+                    comparisonsGrid.style.display = 'none';
+                    emptyState.style.display = 'block';
+                    emptyState.innerHTML = `
+                        <h3>У вас пока нет сохраненных сравнений</h3>
+                        <p>Создайте свое первое сравнение оружия</p>
+                        <a href="comparison.html" class="calculate-button" style="display: inline-block; width: auto; margin-top: 1rem;">
+                            Перейти к сравнению
+                        </a>
+                    `;
+                    return;
+                }
+
+                comparisonsGrid.innerHTML = comparisons.map(comp => `
+                    <div class="comparison-card">
+                        <div class="card-actions">
+                            <button class="action-btn" onclick="deleteComparison(${comp.id})" title="Удалить">🗑️</button>
+                        </div>
+                        <h3>${comp.comparison_name}</h3>
+                        <p>Оружие 1: ${comp.weapon1_id}</p>
+                        <p>Оружие 2: ${comp.weapon2_id}</p>
+                        <small>Создано: ${new Date(comp.created_at).toLocaleDateString()}</small>
+                    </div>
+                `).join('');
+                
+                comparisonsGrid.style.display = 'grid';
+                emptyState.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading comparisons:', error);
+                document.getElementById('comparisonsEmpty').innerHTML = `
+                    <h3>Ошибка загрузки сравнений</h3>
+                    <p>${error.message}</p>
+                `;
+                document.getElementById('comparisonsEmpty').style.display = 'block';
+            }
+        }
+
+        async function loadUserStats() {
+            try {
+                const response = await fetch('http://localhost:3000/api/stats', {
+                    headers: authSystem.getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const stats = await response.json();
+                const statsGrid = document.getElementById('statsGrid');
+
+                statsGrid.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.builds_count || 0}</div>
+                        <div>Сохраненных сборок</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.comparisons_count || 0}</div>
+                        <div>Сохраненных сравнений</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.users_count || 1}</div>
+                        <div>Пользователей в системе</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${Math.round(stats.server_uptime || 0)}с</div>
+                        <div>Время работы сервера</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${authSystem.getUserInfo()?.username || 'Гость'}</div>
+                        <div>Ваш username</div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                document.getElementById('statsGrid').innerHTML = `
+                    <div class="empty-state">
+                        <h3>Ошибка загрузки статистики</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function deleteBuild(buildId) {
+            if (!confirm('Вы уверены, что хотите удалить эту сборку?')) return;
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/builds/${buildId}`, {
+                    method: 'DELETE',
+                    headers: authSystem.getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка удаления');
+                }
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Сборка удалена!');
+                    await loadSavedBuilds();
+                } else {
+                    alert('❌ Ошибка удаления: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error deleting build:', error);
+                alert('❌ Ошибка удаления сборки: ' + error.message);
+            }
+        }
+
+        async function deleteComparison(comparisonId) {
+            if (!confirm('Вы уверены, что хотите удалить это сравнение?')) return;
+
+            try {
+                // Временная заглушка - можно добавить эндпоинт удаления сравнений
+                alert('Функция удаления сравнений будет добавлена в следующем обновлении');
+            } catch (error) {
+                console.error('Error deleting comparison:', error);
+                alert('Ошибка удаления сравнения');
+            }
+        }
+
+        function loadBuild(buildId) {
+            // Редирект на страницу артефактов с параметром
+            window.location.href = `artifacts.html?load=${buildId}`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сравнение оружия - CSX</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .comparison-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .weapon-selectors {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .comparison-results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .weapon-selectors,
+            .comparison-results {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .weapon-card {
+            background: linear-gradient(145deg, #4a4a4a, #3a3a3a);
+            border: 1px solid #4cc9f0;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-comparison {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
+        }
+
+        .better {
+            color: #4cc9f0;
+            font-weight: bold;
+        }
+
+        .worse {
+            color: #f72585;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔄 Сравнение оружия</h1>
+            <p>Сравните характеристики двух видов оружия</p>
+        </header>
+
+        <div class="comparison-container">
+            <a href="index.html" class="back-button">← На главную</a>
+
+            <div class="weapon-selectors">
+                <div class="form-group">
+                    <label for="weapon1">Оружие 1:</label>
+                    <select id="weapon1">
+                        <option value="ak74">АК-74</option>
+                        <option value="svd">СВД</option>
+                        <option value="shotgun">Дробовик</option>
+                        <option value="pm">ПМ</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="weapon2">Оружие 2:</label>
+                    <select id="weapon2">
+                        <option value="ak74">АК-74</option>
+                        <option value="svd" selected>СВД</option>
+                        <option value="shotgun">Дробовик</option>
+                        <option value="pm">ПМ</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="calculate-button" onclick="compareWeapons()">🔄 Сравнить</button>
+
+            <div class="comparison-results" id="comparisonResults">
+                <!-- Результаты сравнения будут здесь -->
+            </div>
+
+            <button class="save-button" onclick="saveComparison()" style="display: none;" id="saveComparisonBtn">
+                💾 Сохранить сравнение
+            </button>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        const weaponsDB = {
+            ak74: { 
+                name: "АК-74", 
+                damage: 45, 
+                fireRate: 600, 
+                range: 400, 
+                accuracy: 75,
+                description: "Автомат Калашникова"
+            },
+            svd: { 
+                name: "СВД", 
+                damage: 80, 
+                fireRate: 30, 
+                range: 800, 
+                accuracy: 90,
+                description: "Снайперская винтовка Драгунова"
+            },
+            shotgun: { 
+                name: "Дробовик", 
+                damage: 60, 
+                fireRate: 60, 
+                range: 40, 
+                accuracy: 50,
+                description: "Гладкоствольное ружье"
+            },
+            pm: { 
+                name: "ПМ", 
+                damage: 20, 
+                fireRate: 30, 
+                range: 50, 
+                accuracy: 60,
+                description: "Пистолет Макарова"
+            }
+        };
+
+        function compareWeapons() {
+            console.log('🔄 Запуск сравнения оружия...');
+            
+            const weapon1Id = document.getElementById('weapon1').value;
+            const weapon2Id = document.getElementById('weapon2').value;
+            
+            console.log('Оружие 1:', weapon1Id);
+            console.log('Оружие 2:', weapon2Id);
+            
+            const weapon1 = weaponsDB[weapon1Id];
+            const weapon2 = weaponsDB[weapon2Id];
+
+            if (!weapon1 || !weapon2) {
+                console.error('❌ Оружие не найдено в базе данных');
+                return;
+            }
+
+            const results = document.getElementById('comparisonResults');
+            const saveBtn = document.getElementById('saveComparisonBtn');
+
+            if (!results) {
+                console.error('❌ Не найден элемент для результатов');
+                return;
+            }
+
+            results.innerHTML = `
+                <div class="weapon-card">
+                    <h3>${weapon1.name}</h3>
+                    <p><em>${weapon1.description}</em></p>
+                    <div class="stat-comparison">
+                        <span>Урон:</span>
+                        <span class="${weapon1.damage > weapon2.damage ? 'better' : weapon1.damage < weapon2.damage ? 'worse' : ''}">
+                            ${weapon1.damage}
+                        </span>
+                    </div>
+                    <div class="stat-comparison">
+                        <span>Скорострельность:</span>
+                        <span class="${weapon1.fireRate > weapon2.fireRate ? 'better' : weapon1.fireRate < weapon2.fireRate ? 'worse' : ''}">
+                            ${weapon1.fireRate} выстр/мин
+                        </span>
+                    </div>
+                    <div class="stat-comparison">
+                        <span>Дальность:</span>
+                        <span class="${weapon1.range > weapon2.range ? 'better' : weapon1.range < weapon2.range ? 'worse' : ''}">
+                            ${weapon1.range}м
+                        </span>
+                    </div>
+                    <div class="stat-comparison">
+                        <span>Точность:</span>
+                        <span class="${weapon1.accuracy > weapon2.accuracy ? 'better' : weapon1.accuracy < weapon2.accuracy ? 'worse' : ''}">
+                            ${weapon1.accuracy}%
+                        </span>
+                    </div>
+                </div>
+
+                <div class="weapon-card">
+                    <h3>${weapon2.name}</h3>
+                    <p><em>${weapon2.description}</em></p>
+                    <div class="stat-comparison">
+                        <span>Урон:</span>
+                        <span class="${weapon2.damage > weapon1.damage ? 'better' : weapon2.damage < weapon1.damage ? 'worse' : ''}">
+                            ${weapon2.damage}
+                        </span>
+                    </div>
+                    <div class="stat-comparison">
+                        <span>Скорострельность:</span>
+                        <span class="${weapon2.fireRate > weapon1.fireRate ? 'better' : weapon2.fireRate < weapon1.fireRate ? 'worse' : ''}">
+                            ${weapon2.fireRate} выстр/мин
+                        </span>
+                    </div>
+                    <div class="stat-comparison">
+                        <span>Дальность:</span>
+                        <span class="${weapon2.range > weapon1.range ? 'better' : weapon2.range < weapon1.range ? 'worse' : ''}">
+                            ${weapon2.range}м
+                        </span>
+                    </div>
+                    <div class="stat-comparison">
+                        <span>Точность:</span>
+                        <span class="${weapon2.accuracy > weapon1.accuracy ? 'better' : weapon2.accuracy < weapon1.accuracy ? 'worse' : ''}">
+                            ${weapon2.accuracy}%
+                        </span>
+                    </div>
+                </div>
+            `;
+
+            // Показываем кнопку сохранения если пользователь авторизован
+            if (authSystem && authSystem.checkAuth()) {
+                saveBtn.style.display = 'block';
+            } else {
+                saveBtn.style.display = 'none';
+            }
+
+            console.log('✅ Сравнение завершено');
+        }
+
+        async function saveComparison() {
+            console.log('💾 Попытка сохранения сравнения...');
+            
+            if (!authSystem || !authSystem.checkAuth()) {
+                alert('Для сохранения необходимо войти в систему');
+                if (authSystem && authSystem.showAuthModal) {
+                    authSystem.showAuthModal();
+                }
+                return;
+            }
+
+            const weapon1Id = document.getElementById('weapon1').value;
+            const weapon2Id = document.getElementById('weapon2').value;
+            
+            const comparisonName = prompt('Введите название для сравнения:');
+            if (!comparisonName) return;
+
+            try {
+                console.log('📤 Отправка данных на сервер...');
+                
+                const response = await fetch('http://localhost:3000/api/comparisons/save', {
+                    method: 'POST',
+                    headers: authSystem.getAuthHeaders(),
+                    body: JSON.stringify({
+                        comparison_name: comparisonName,
+                        weapon1_id: weapon1Id,
+                        weapon2_id: weapon2Id,
+                        parameters: {
+                            timestamp: new Date().toISOString(),
+                            weapon1: weaponsDB[weapon1Id],
+                            weapon2: weaponsDB[weapon2Id]
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ Ошибка сервера:', errorText);
+                    throw new Error('Ошибка сохранения сравнения');
+                }
+
+                const result = await response.json();
+                console.log('✅ Ответ сервера:', result);
+                alert('✅ Сравнение сохранено!');
+            } catch (error) {
+                console.error('❌ Ошибка сохранения:', error);
+                alert('❌ Ошибка сохранения: ' + error.message);
+            }
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Страница сравнения загружена');
+            
+            // Добавляем обработчики изменений в селекты
+            document.getElementById('weapon1').addEventListener('change', compareWeapons);
+            document.getElementById('weapon2').addEventListener('change', compareWeapons);
+            
+            // Запускаем первоначальное сравнение
+            compareWeapons();
+            
+            console.log('✅ Страница сравнения инициализирована');
+        });
+    </script>
+</body>
+</html>

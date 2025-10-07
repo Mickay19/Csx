@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сборка артефактов - STALKER Helper</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .artifacts-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .builder-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .builder-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .equipment-selection {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .equipment-selection {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .container-slots {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        @media (max-width: 600px) {
+            .container-slots {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧪 Конструктор снаряжения STALKER</h1>
+            <p>Соберите оптимальный набор артефактов для вашего костюма</p>
+        </header>
+
+        <div class="artifacts-container">
+            <a href="index.html" class="back-button">← Назад в лагерь</a>
+
+            <div class="equipment-selection">
+                <!-- Выбор костюма -->
+                <div class="selection-group">
+                    <h3>Выберите костюм:</h3>
+                    <div class="equipment-buttons" id="suitButtons">
+                        <button class="equipment-button active" onclick="selectSuit('combat')">Боевой</button>
+                        <button class="equipment-button" onclick="selectSuit('scientific')">Научный</button>
+                        <button class="equipment-button" onclick="selectSuit('combined')">Комбинированный</button>
+                        <button class="equipment-button" onclick="selectSuit('merc')">Наемник</button>
+                        <button class="equipment-button" onclick="selectSuit('ecologist')">Эколог</button>
+                        <button class="equipment-button" onclick="selectSuit('stalker')">Сталкер</button>
+                    </div>
+                    <div class="equipment-info" id="suitInfo">
+                        <strong>Боевой костюм</strong><br>
+                        • Пулестойкость: 80%<br>
+                        • Защита от аномалий: 40%<br>
+                        • Радиационная защита: 20%<br>
+                        <em>Максимальная защита от пуль и осколков</em>
+                    </div>
+                </div>
+
+                <!-- Выбор контейнера -->
+                <div class="selection-group">
+                    <h3>Выберите контейнер:</h3>
+                    <div class="equipment-buttons" id="containerButtons">
+                        <button class="equipment-button active" onclick="selectContainer('standard')">Стандартный</button>
+                        <button class="equipment-button" onclick="selectContainer('military')">Военный</button>
+                        <button class="equipment-button" onclick="selectContainer('scientific')">Научный</button>
+                        <button class="equipment-button" onclick="selectContainer('lightweight')">Облегченный</button>
+                        <button class="equipment-button" onclick="selectContainer('expanded')">Расширенный</button>
+                        <button class="equipment-button" onclick="selectContainer('artifact')">Артефактный</button>
+                        <button class="equipment-button" onclick="selectContainer('heavy')">Тяжелый</button>
+                    </div>
+                    <div class="equipment-info" id="containerInfo">
+                        <strong>Стандартный контейнер</strong><br>
+                        • Слотов для артефактов: 4<br>
+                        <em>Базовый контейнер без дополнительных бонусов</em>
+                    </div>
+                </div>
+            </div>
+
+            <div class="builder-grid">
+                <!-- Левая колонка - Сборка -->
+                <div class="builder-section">
+                    <h2>Ваше снаряжение</h2>
+                    
+                    <h3>Контейнер для артефактов:</h3>
+                    <div class="container-slots" id="containerSlots">
+                        <div class="container-slot empty" data-slot="0"></div>
+                        <div class="container-slot empty" data-slot="1"></div>
+                        <div class="container-slot empty" data-slot="2"></div>
+                        <div class="container-slot empty" data-slot="3"></div>
+                    </div>
+                    
+                    <div class="total-stats">
+                        <h3>Общие характеристики:</h3>
+                        <ul class="stats-list" id="totalStats">
+                            <li>💥 Пулестойкость: 80%</li>
+                            <li>⚡ Защита от аномалий: 40%</li>
+                            <li>☢️ Радиационная защита: 20%</li>
+                            <li>🏃 Скорость: 0%</li>
+                            <li>💪 Выносливость: 0%</li>
+                            <li>🎒 Грузоподъемность: 0кг</li>
+                        </ul>
+                    </div>
+
+                    <button class="save-button" onclick="saveBuild()">💾 Сохранить сборку</button>
+                </div>
+
+                <!-- Правая колонка - Библиотека артефактов -->
+                <div class="builder-section">
+                    <h2>Коллекция артефактов</h2>
+                    <div class="artifact-library">
+                        <div class="library-grid" id="artifactLibrary">
+                            <!-- Артефакты будут через JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="artifacts.js"></script>
+</body>
+</html>

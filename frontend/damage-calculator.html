@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор урона - CSX</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .calculator-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1200px) {
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .auth-section {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .auth-button {
+            background: #4cc9f0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+        }
+
+        .auth-form {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2a2a2a;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .save-comparison-btn {
+            background: linear-gradient(145deg, #f72585, #b5179e);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .save-comparison-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <!-- Модальное окно авторизации -->
+    <div class="auth-modal" id="authModal">
+        <div class="auth-form">
+            <h3 style="color: #4cc9f0; margin-bottom: 1rem;">Вход в систему</h3>
+            <div class="form-group">
+                <label style="color: #4cc9f0;">Имя пользователя:</label>
+                <input type="text" id="loginUsername" style="width: 100%; padding: 10px; border: 1px solid #555; border-radius: 5px; background: #3a3a3a; color: white;">
+            </div>
+            <div class="form-group">
+                <label style="color: #4cc9f0;">Пароль:</label>
+                <input type="password" id="loginPassword" style="width: 100%; padding: 10px; border: 1px solid #555; border-radius: 5px; background: #3a3a3a; color: white;">
+            </div>
+            <button onclick="login()" class="auth-button" style="width: 100%;">Войти</button>
+            <p id="loginError" style="color: #f72585; margin-top: 1rem; display: none;"></p>
+        </div>
+    </div>
+
+    <!-- Секция авторизации -->
+    <div class="auth-section">
+        <button class="auth-button" onclick="showAuthModal()" id="authBtn">Войти</button>
+        <span id="userInfo" style="color: white; display: none; margin-left: 10px;"></span>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>⚔️ Калькулятор урона CSX</h1>
+            <p>Рассчитайте количество попаданий и время для уничтожения цели</p>
+        </header>
+
+        <div class="calculator-container">
+            <a href="index.html" class="back-button">← На главную</a>
+
+            <div class="calculator-grid">
+                <!-- Левая колонка - Ввод данных -->
+                <div class="input-section">
+                    <h2>Параметры цели</h2>
+                    
+                    <div class="form-group">
+                        <label for="health">Здоровье цели (HP):</label>
+                        <input type="number" id="health" min="1" max="1000" value="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="armor">Броня цели (% защиты):</label>
+                        <input type="number" id="armor" min="0" max="95" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="distance">Дистанция (метры):</label>
+                        <input type="number" id="distance" min="1" max="1000" value="50">
+                    </div>
+
+                    <h2>Выбор оружия</h2>
+                    
+                    <div class="form-group">
+                        <label for="weapon">Основное оружие:</label>
+                        <select id="weapon">
+                            <option value="pm">ПМ (Пистолет Макарова)</option>
+                            <option value="aps">АПС (Автоматический пистолет)</option>
+                            <option value="fort12">Форт-12</option>
+                            <option value="ak74" selected>АК-74</option>
+                            <option value="ak74u">АКС-74У</option>
+                            <option value="l85">L85A1</option>
+                            <option value="groza">Гроза</option>
+                            <option value="svd">СВД</option>
+                            <option value="vss">ВСС Винторез</option>
+                            <option value="svu">СВУ-А</option>
+                            <option value="shotgun">Дробовик</option>
+                            <option value="spas12">SPAS-12</option>
+                            <option value="mp5">MP5</option>
+                            <option value="pkm">ПКМ</option>
+                            <option value="rpg7">РПГ-7</option>
+                            <option value="gauss">Гаусс-пушка</option>
+                            <option value="custom">Свое значение...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="customDamageGroup" style="display: none;">
+                        <label for="customDamage">Свой урон оружия:</label>
+                        <input type="number" id="customDamage" min="1" max="500" value="50">
+                    </div>
+
+                    <button class="calculate-button" onclick="calculateDamage()">🎯 Рассчитать</button>
+                    <button class="save-comparison-btn" onclick="saveComparison()" id="saveComparisonBtn" disabled>💾 Сохранить расчет</button>
+                </div>
+
+                <!-- Правая колонка - Результаты -->
+                <div class="result-section">
+                    <h2>Результаты расчета</h2>
+                    
+                    <div class="weapon-info" id="weaponInfo">
+                        Выберите оружие для расчета
+                    </div>
+
+                    <div class="result-card">
+                        <h3>Влияние дистанции</h3>
+                        <ul class="result-stats">
+                            <li id="distanceInfo">—</li>
+                            <li>Модификатор урона: <span id="distanceModifier">—</span></li>
+                        </ul>
+                        <div class="damage-bar">
+                            <div class="damage-fill" id="distanceBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <h3>Попадания в тело</h3>
+                        <ul class="result-stats">
+                            <li id="bodyShots">—</li>
+                            <li>Урон за выстрел: <span id="bodyDamage">—</span></li>
+                            <li>Общий урон: <span id="totalBodyDamage">—</span></li>
+                            <li>Время на убийство: <span id="bodyTime">—</span></li>
+                        </ul>
+                        <div class="damage-bar">
+                            <div class="damage-fill" id="bodyDamageBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <h3>Попадания в голову <span class="critical">(×1.5 урона)</span></h3>
+                        <ul class="result-stats">
+                            <li class="headshot" id="headShots">—</li>
+                            <li class="headshot">Урон за выстрел: <span id="headDamage">—</span></li>
+                            <li class="headshot">Общий урон: <span id="totalHeadDamage">—</span></li>
+                            <li class="headshot">Время на убийство: <span id="headTime">—</span></li>
+                        </ul>
+                        <div class="damage-bar">
+                            <div class="damage-fill" id="headDamageBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <h3>Эффективность</h3>
+                        <ul class="result-stats">
+                            <li>Выстрелов экономия: <span id="shotsSaved">—</span></li>
+                            <li>Времени экономия: <span id="timeSaved">—</span></li>
+                            <li>Эффективность в голову: <span id="efficiency">—</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <script src="auth.js"></script>
+    <script src="damage-calculator.js"></script>
+    <script>
+        // Глобальные переменные для хранения текущих результатов
+        let currentCalculation = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Проверяем авторизацию при загрузке
+            authSystem.checkAuth();
+            
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', calculateDamage);
+            });
+            
+            document.getElementById('weapon').addEventListener('change', function() {
+                updateWeaponInfo();
+                calculateDamage();
+            });
+            
+            init();
+        });
+
+        function showAuthModal() {
+            document.getElementById('authModal').style.display = 'block';
+        }
+
+        function hideAuthModal() {
+            document.getElementById('authModal').style.display = 'none';
+            document.getElementById('loginError').style.display = 'none';
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorElement = document.getElementById('loginError');
+
+            try {
+                const result = await authSystem.login(username, password);
+                hideAuthModal();
+                
+                document.getElementById('authBtn').style.display = 'none';
+                document.getElementById('userInfo').style.display = 'inline';
+                document.getElementById('userInfo').textContent = `Привет, ${result.user.username}`;
+                
+                // Активируем кнопку сохранения
+                document.getElementById('saveComparisonBtn').disabled = false;
+                
+                alert('Успешный вход! Теперь вы можете сохранять расчеты.');
+            } catch (error) {
+                errorElement.textContent = error.message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        // Функция для сохранения расчета
+        async function saveComparison() {
+            if (!authSystem.checkAuth()) {
+                alert('Для сохранения расчета необходимо войти в систему');
+                showAuthModal();
+                return;
+            }
+
+            if (!currentCalculation) {
+                alert('Сначала выполните расчет');
+                return;
+            }
+
+            const comparisonName = prompt('Введите название для сохранения расчета:');
+            if (!comparisonName) return;
+
+            const saveData = {
+                comparison_name: comparisonName,
+                weapon1_id: currentCalculation.weapon.id,
+                parameters: {
+                    health: currentCalculation.health,
+                    armor: currentCalculation.armor,
+                    distance: currentCalculation.distance
+                },
+                results: currentCalculation.results
+            };
+
+            try {
+                const response = await fetch('http://localhost:3000/api/comparisons/save', {
+                    method: 'POST',
+                    headers: authSystem.getAuthHeaders(),
+                    body: JSON.stringify(saveData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`✅ Расчет "${comparisonName}" успешно сохранен!`);
+                } else {
+                    alert(`❌ Ошибка: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Ошибка сохранения:', error);
+                alert('❌ Ошибка соединения с сервером');
+            }
+        }
+
+        // Обновляем функцию calculateDamage для сохранения текущих результатов
+        const originalCalculateDamage = calculateDamage;
+        calculateDamage = function() {
+            originalCalculateDamage();
+            
+            // Сохраняем текущие результаты для возможного сохранения
+            const health = parseInt(document.getElementById('health').value) || 100;
+            const armor = parseInt(document.getElementById('armor').value) || 0;
+            const distance = parseInt(document.getElementById('distance').value) || 50;
+            const weaponId = document.getElementById('weapon').value;
+            
+            currentCalculation = {
+                weapon: weaponsDB[weaponId],
+                health: health,
+                armor: armor,
+                distance: distance,
+                results: {
+                    bodyShots: document.getElementById('bodyShots').textContent,
+                    headShots: document.getElementById('headShots').textContent,
+                    bodyTime: document.getElementById('bodyTime').textContent,
+                    headTime: document.getElementById('headTime').textContent
+                }
+            };
+        };
+    </script>
+</body>
+</html>

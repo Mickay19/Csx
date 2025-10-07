@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSX - Weapon Analytics Platform</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка с авторизацией -->
+        <div class="auth-header">
+            <div id="authSection">
+                <button onclick="showAuthModal()" class="auth-btn">Войти</button>
+                <span id="userInfo" style="display: none;"></span>
+            </div>
+        </div>
+
+        <header>
+            <h1>CSX Weapon Analytics</h1>
+            <p>Платформа для анализа и сравнения характеристик вооружения</p>
+        </header>
+
+        <main class="main-menu">
+            <div class="button-grid">
+                <a href="damage-calculator.html" class="menu-button">
+                    <h2>📊 Анализ эффективности</h2>
+                    <p>Расчет баллистических характеристик и времени нейтрализации</p>
+                </a>
+
+                <a href="comparison.html" class="menu-button">
+                    <h2>🔄 Сравнение оружия</h2>
+                    <p>Параллельный анализ двух моделей с графиками</p>
+                </a>
+
+                <div class="menu-button" onclick="showSavedBuilds()">
+                    <h2>💾 Мои сборки</h2>
+                    <p>Сохраненные конфигурации и результаты анализа</p>
+                </div>
+
+                <div class="menu-button" onclick="showSavedComparisons()">
+                    <h2>📈 История сравнений</h2>
+                    <p>Просмотр ранее проведенных анализов</p>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>CSX Weapon Analytics Platform © 2024 | Backend: <span id="backendStatus">❌ Не доступен</span></p>
+        </footer>
+    </div>
+
+    <!-- Модальное окно авторизации -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <h3>Авторизация CSX</h3>
+            <div class="form-group">
+                <label>Имя пользователя:</label>
+                <input type="text" id="loginUsername" placeholder="Введите имя">
+            </div>
+            <div class="form-group">
+                <label>Пароль:</label>
+                <input type="password" id="loginPassword" placeholder="Введите пароль">
+            </div>
+            <button onclick="login()" class="btn-primary">Войти</button>
+            <button onclick="showRegister()" class="btn-secondary">Регистрация</button>
+            <p id="authError" class="error-message"></p>
+        </div>
+    </div>
+
+    <!-- Модальное окно регистрации -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <h3>Регистрация в CSX</h3>
+            <div class="form-group">
+                <label>Имя пользователя:</label>
+                <input type="text" id="regUsername" placeholder="Придумайте имя">
+            </div>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="regEmail" placeholder="Введите email">
+            </div>
+            <div class="form-group">
+                <label>Пароль:</label>
+                <input type="password" id="regPassword" placeholder="Придумайте пароль">
+            </div>
+            <button onclick="register()" class="btn-primary">Зарегистрироваться</button>
+            <button onclick="showLogin()" class="btn-secondary">Назад к входу</button>
+            <p id="registerError" class="error-message"></p>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        // Функции модальных окон
+        function showAuthModal() {
+            document.getElementById('authModal').style.display = 'block';
+            document.getElementById('registerModal').style.display = 'none';
+            document.getElementById('authError').style.display = 'none';
+        }
+
+        function showRegister() {
+            document.getElementById('authModal').style.display = 'none';
+            document.getElementById('registerModal').style.display = 'block';
+            document.getElementById('registerError').style.display = 'none';
+        }
+
+        function showLogin() {
+            document.getElementById('authModal').style.display = 'block';
+            document.getElementById('registerModal').style.display = 'none';
+            document.getElementById('authError').style.display = 'none';
+        }
+
+        function hideModals() {
+            document.getElementById('authModal').style.display = 'none';
+            document.getElementById('registerModal').style.display = 'none';
+        }
+
+        // Авторизация
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorElement = document.getElementById('authError');
+
+            if (!username || !password) {
+                errorElement.textContent = 'Заполните все поля';
+                errorElement.style.display = 'block';
+                return;
+            }
+
+            try {
+                await authSystem.login(username, password);
+                hideModals();
+                alert('Успешный вход!');
+            } catch (error) {
+                errorElement.textContent = error.message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        // Регистрация
+        async function register() {
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const errorElement = document.getElementById('registerError');
+
+            if (!username || !email || !password) {
+                errorElement.textContent = 'Заполните все поля';
+                errorElement.style.display = 'block';
+                return;
+            }
+
+            try {
+                await authSystem.register({ username, email, password });
+                hideModals();
+                alert('Регистрация успешна!');
+            } catch (error) {
+                errorElement.textContent = error.message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        // Функции для кнопок
+        function showSavedBuilds() {
+            if (!authSystem.checkAuth()) {
+                alert('Для доступа к сохраненным сборкам необходимо войти в систему');
+                showAuthModal();
+                return;
+            }
+            window.location.href = 'saved-builds.html';
+        }
+
+        function showSavedComparisons() {
+            if (!authSystem.checkAuth()) {
+                alert('Для доступа к истории сравнений необходимо войти в систему');
+                showAuthModal();
+                return;
+            }
+            window.location.href = 'saved-comparisons.html';
+        }
+
+        // Проверка бэкенда при загрузке
+        async function checkBackend() {
+            try {
+                const health = await authSystem.checkServerHealth();
+                document.getElementById('backendStatus').innerHTML = '✅ Работает';
+                document.getElementById('backendStatus').style.color = '#4cc9f0';
+            } catch (error) {
+                document.getElementById('backendStatus').innerHTML = '❌ Ошибка';
+                document.getElementById('backendStatus').style.color = '#f72585';
+            }
+        }
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            checkBackend();
+            
+            // Закрытие модальных окон при клике вне их
+            window.onclick = function(event) {
+                const authModal = document.getElementById('authModal');
+                const registerModal = document.getElementById('registerModal');
+                
+                if (event.target === authModal) {
+                    authModal.style.display = 'none';
+                }
+                if (event.target === registerModal) {
+                    registerModal.style.display = 'none';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
